@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import {
   DndContext,
   closestCorners,
@@ -14,6 +14,7 @@ import {
   updateIssue as updateIssueApi,
 } from "../api/issues";
 import { useProjectSocket } from "../hooks/useProjectSocket";
+import Layout from "../components/Layout";
 import KanbanColumn from "../components/KanbanColumn";
 import CreateIssueForm from "../components/CreateIssueForm";
 import IssueDetailModal from "../components/IssueDetailModal";
@@ -22,7 +23,6 @@ const STATUSES = ["todo", "in_progress", "done"];
 
 export default function ProjectBoard() {
   const { projectId } = useParams();
-  const navigate = useNavigate();
 
   const [project, setProject] = useState(null);
   const [issues, setIssues] = useState([]);
@@ -31,9 +31,7 @@ export default function ProjectBoard() {
   const [selectedIssue, setSelectedIssue] = useState(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   useEffect(() => {
@@ -119,61 +117,43 @@ export default function ProjectBoard() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white p-8">
-        <p className="text-slate-400">Loading board...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-white p-8">
-        <p className="text-red-400">{error}</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-8">
-      <div className="flex items-center gap-4 mb-6">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="text-slate-400 hover:text-white"
-        >
-          ← Back
-        </button>
-        <h1 className="text-2xl font-bold">{project?.name}</h1>
-      </div>
+    <Layout title={project?.name || "Loading..."}>
+      {loading ? (
+        <p className="text-gray-500">Loading board...</p>
+      ) : error ? (
+        <p className="text-red-600">{error}</p>
+      ) : (
+        <>
+          <CreateIssueForm onCreate={handleCreateIssue} />
 
-      <CreateIssueForm onCreate={handleCreateIssue} />
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0">
+              {STATUSES.map((status) => (
+                <KanbanColumn
+                  key={status}
+                  status={status}
+                  issues={issues.filter((issue) => issue.status === status)}
+                  onIssueClick={handleIssueClick}
+                />
+              ))}
+            </div>
+          </DndContext>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {STATUSES.map((status) => (
-            <KanbanColumn
-              key={status}
-              status={status}
-              issues={issues.filter((issue) => issue.status === status)}
-              onIssueClick={handleIssueClick}
+          {selectedIssue && (
+            <IssueDetailModal
+              issue={selectedIssue}
+              projectId={projectId}
+              onClose={() => setSelectedIssue(null)}
+              onDeleted={handleIssueDeleted}
             />
-          ))}
-        </div>
-      </DndContext>
-
-      {selectedIssue && (
-        <IssueDetailModal
-          issue={selectedIssue}
-          projectId={projectId}
-          onClose={() => setSelectedIssue(null)}
-          onDeleted={handleIssueDeleted}
-        />
+          )}
+        </>
       )}
-    </div>
+    </Layout>
   );
 }

@@ -103,4 +103,25 @@ async function refresh(req, res) {
   }
 }
 
-module.exports = { register, login, refresh };
+async function updateProfile(req, res) {
+  const { name } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: "name is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE users SET name = $1 WHERE id = $2 RETURNING id, name, email, role`,
+      [name.trim(), req.user.id],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "user not found" });
+    }
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "internal server error" });
+  }
+}
+
+module.exports = { register, login, refresh, updateProfile };

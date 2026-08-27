@@ -3,10 +3,16 @@ import { getComments, createComment } from "../api/comments";
 import { deleteIssue } from "../api/issues";
 
 const priorityColors = {
-  low: "bg-slate-600",
-  medium: "bg-blue-600",
-  high: "bg-orange-600",
-  urgent: "bg-red-600",
+  low: "bg-slate-100 text-slate-600",
+  medium: "bg-blue-100 text-blue-700",
+  high: "bg-orange-100 text-orange-700",
+  urgent: "bg-red-100 text-red-700",
+};
+
+const statusColors = {
+  todo: "bg-slate-100 text-slate-600",
+  in_progress: "bg-orange-100 text-orange-700",
+  done: "bg-green-100 text-green-700",
 };
 
 const statusLabels = {
@@ -84,27 +90,29 @@ export default function IssueDetailModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center sm:p-4 z-50"
       onClick={onClose}
     >
       <div
-        className="bg-slate-800 rounded-lg w-full max-w-lg max-h-[85vh] flex flex-col"
+        className="bg-white rounded-t-lg sm:rounded-lg w-full sm:max-w-lg h-[90vh] sm:h-auto sm:max-h-[85vh] flex flex-col shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-slate-700">
+        <div className="p-4 sm:p-6 border-b border-gray-200">
           <div className="flex justify-between items-start gap-4">
-            <h2 className="text-xl font-bold text-white">{issue.title}</h2>
-            <div className="flex items-center gap-3">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+              {issue.title}
+            </h2>
+            <div className="flex items-center gap-3 shrink-0">
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-red-400 hover:text-red-300 disabled:opacity-50 text-sm font-medium"
+                className="text-red-500 hover:text-red-600 disabled:opacity-50 text-sm font-medium"
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-white text-xl leading-none"
+                className="text-gray-400 hover:text-gray-700 text-2xl sm:text-xl leading-none p-1"
               >
                 ×
               </button>
@@ -113,47 +121,54 @@ export default function IssueDetailModal({
 
           <div className="flex gap-2 mt-3">
             <span
-              className={`text-xs px-2 py-1 rounded-full text-white ${priorityColors[issue.priority]}`}
+              className={`text-xs px-2 py-1 rounded-full font-medium ${priorityColors[issue.priority]}`}
             >
               {issue.priority}
             </span>
-            <span className="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-200">
+            <span
+              className={`text-xs px-2 py-1 rounded-full font-medium ${statusColors[issue.status]}`}
+            >
               {statusLabels[issue.status]}
             </span>
           </div>
 
           {issue.description && (
-            <p className="text-slate-300 text-sm mt-3">{issue.description}</p>
+            <p className="text-gray-600 text-sm mt-3">{issue.description}</p>
           )}
 
           {issue.due_date && (
-            <p className="text-slate-400 text-xs mt-2">
+            <p className="text-gray-400 text-xs mt-2">
               Due {new Date(issue.due_date).toLocaleDateString()}
             </p>
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
-          <h3 className="text-sm font-semibold text-slate-300 mb-2">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-700 mb-2">
             Comments {comments.length > 0 && `(${comments.length})`}
           </h3>
 
           {loading ? (
-            <p className="text-slate-500 text-sm">Loading comments...</p>
+            <p className="text-gray-400 text-sm">Loading comments...</p>
           ) : comments.length === 0 ? (
-            <p className="text-slate-500 text-sm">No comments yet.</p>
+            <p className="text-gray-400 text-sm">No comments yet.</p>
           ) : (
             comments.map((comment) => (
-              <div key={comment.id} className="bg-slate-900/50 rounded p-3">
-                <div className="flex justify-between items-baseline mb-1">
-                  <span className="text-sm font-medium text-white">
+              <div
+                key={comment.id}
+                className="bg-gray-50 rounded-lg p-3 border border-gray-100"
+              >
+                <div className="flex justify-between items-baseline mb-1 gap-2">
+                  <span className="text-sm font-medium text-gray-900 truncate">
                     {comment.author_name}
                   </span>
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-gray-400 shrink-0">
                     {new Date(comment.created_at).toLocaleString()}
                   </span>
                 </div>
-                <p className="text-sm text-slate-300">{comment.body}</p>
+                <p className="text-sm text-gray-600 wrap-break-word">
+                  {comment.body}
+                </p>
               </div>
             ))
           )}
@@ -161,19 +176,19 @@ export default function IssueDetailModal({
 
         <form
           onSubmit={handleSubmitComment}
-          className="p-4 border-t border-slate-700 flex gap-2"
+          className="p-3 sm:p-4 border-t border-gray-200 flex gap-2"
         >
           <input
             type="text"
             placeholder="Add a comment..."
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            className="flex-1 px-3 py-2 rounded bg-slate-700 text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-2.5 rounded-lg border border-gray-300 text-gray-900 outline-none focus:ring-2 focus:ring-orange-500 text-base"
           />
           <button
             type="submit"
             disabled={submitting}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 px-4 py-2 rounded text-sm font-medium text-white"
+            className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:opacity-50 px-4 py-2.5 rounded-lg text-sm font-medium text-white shrink-0"
           >
             {submitting ? "..." : "Post"}
           </button>
